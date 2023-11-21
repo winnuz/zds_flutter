@@ -56,6 +56,10 @@ class ZdsCalendar extends StatefulWidget {
   /// format switcher. To not show a format switcher, use [ZdsCalendar.monthly] instead.
   final bool hasHeader;
 
+
+  /// Whether the selected date in the header should be shown or not.
+  final bool showSelectedDateHeader;
+
   /// List of icons to be shown at the beginning of selected weeks.
   ///
   /// Defaults to empty.
@@ -131,6 +135,9 @@ class ZdsCalendar extends StatefulWidget {
   /// Defaults to 'All'.
   final String? allCustomLabel;
 
+  /// Allow Row Height to replace calenderRowHeight
+  final double? rowHeight;
+
   /// Calendar widget that allows to switch between a monthly and weekly format. As such, the calendar header will
   /// always be shown. To not show the calendar header and use a monthly format, use [ZdsCalendar.monthly] instead.
   const ZdsCalendar({
@@ -160,6 +167,8 @@ class ZdsCalendar extends StatefulWidget {
     this.calendarTextColor,
     this.holidayEvents = const [],
     this.allCustomLabel,
+    this.rowHeight,
+    this.showSelectedDateHeader = false
   })  : _variant = _ZdsCalendarVariant.switchable,
         hasHeader = true;
 
@@ -192,6 +201,8 @@ class ZdsCalendar extends StatefulWidget {
     this.calendarTextColor,
     this.holidayEvents = const [],
     this.allCustomLabel,
+    this.rowHeight,
+    this.showSelectedDateHeader = false
   }) : _variant = _ZdsCalendarVariant.monthly;
 
   /// Shows a calendar in a fixed weekly format.
@@ -222,6 +233,8 @@ class ZdsCalendar extends StatefulWidget {
     this.calendarTextColor,
     this.holidayEvents = const [],
     this.allCustomLabel,
+    this.rowHeight,
+    this.showSelectedDateHeader = false
   })  : _variant = _ZdsCalendarVariant.weekly,
         hasHeader = false;
 
@@ -240,6 +253,7 @@ class ZdsCalendar extends StatefulWidget {
     properties.add(DiagnosticsProperty<bool>('isRangeSelectable', isRangeSelectable));
     properties.add(IterableProperty<CalendarEvent>('events', events));
     properties.add(DiagnosticsProperty<bool>('hasHeader', hasHeader));
+    properties.add(DiagnosticsProperty<bool>('showSelectedDateHeader', showSelectedDateHeader));
     properties.add(IterableProperty<WeekIcon>('weekIcons', weekIcons));
     properties.add(DiagnosticsProperty<bool>('isGridShown', isGridShown));
     properties.add(ObjectFlagProperty<void Function(DateTime p1, DateTime p2)?>.has('onDaySelected', onDaySelected));
@@ -271,6 +285,7 @@ class ZdsCalendar extends StatefulWidget {
     properties.add(ColorProperty('calendarTextColor', calendarTextColor));
     properties.add(IterableProperty<DateTime>('holidayEvents', holidayEvents));
     properties.add(StringProperty('allCustomLabel', allCustomLabel));
+    properties.add(DoubleProperty('rowHeight', rowHeight));
   }
 }
 
@@ -314,7 +329,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
     final calendar = TableCalendar(
       startingDayOfWeek: startingDayOfWeek,
       availableGestures: widget.availableGestures,
-      rowHeight: calendarRowHeight,
+      rowHeight: widget.rowHeight ?? calendarRowHeight,
       // TODO(calendar): Determine initial and final dates
       firstDay: widget.firstDay ?? DateTime.fromMillisecondsSinceEpoch(0),
       lastDay: widget.lastDay ?? DateTime(17776),
@@ -466,115 +481,14 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
       color: Theme.of(context).colorScheme.surface,
       padding: widget.headerPadding,
       child: Material(
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              color: widget.calendarHeaderIconColor ?? Theme.of(context).colorScheme.onSurface,
-              splashRadius: 24,
-              tooltip: MaterialLocalizations.of(context).previousMonthTooltip,
-              onPressed: () => setState(
-                () => _focusedDay = _focusedDay.startOfMonth.subtract(
-                  const Duration(days: 1),
-                ),
-              ),
-            ),
-            ZdsPopupMenu(
-              items: [
-                for (int i = 1; i <= 12; i++)
-                  ZdsPopupMenuItem(
-                    value: i,
-                    child: ListTile(
-                      visualDensity: VisualDensity.compact,
-                      // Shows the month's name
-                      title: Text(DateFormat.MMMM(languageCode).format(DateTime(2000, i))),
-                    ),
-                  ),
-              ],
-              onSelected: (int monthNumber) => setState(() => _focusedDay = DateTime(_focusedDay.year, monthNumber)),
-              builder: (_, open) => InkWell(
-                onTap: open,
-                borderRadius: BorderRadius.circular(8),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minWidth: 110,
-                    minHeight: 48,
-                  ),
-                  child: Align(
-                    child: Semantics(
-                      button: true,
-                      child: Text(
-                        _focusedDay.format('MMMM yyyy', languageCode),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
-                            ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              color: widget.calendarHeaderIconColor ?? Theme.of(context).colorScheme.onSurface,
-              splashRadius: 24,
-              tooltip: MaterialLocalizations.of(context).nextMonthTooltip,
-              onPressed: () => setState(() => _focusedDay = _focusedDay.endOfMonth.add(const Duration(days: 1))),
-            ),
-            const Spacer(),
-            if (widget._variant == _ZdsCalendarVariant.switchable)
-              ZdsPopupMenu(
-                onSelected: (CalendarFormat format) {
-                  if (_calendarFormat != format) {
-                    setState(() {
-                      _calendarFormat = format;
-                    });
-                    widget.onFormatChanged?.call(format);
-                  }
-                },
-                items: [
-                  ZdsPopupMenuItem(
-                    value: CalendarFormat.month,
-                    child: ListTile(
-                      visualDensity: VisualDensity.compact,
-                      title: Text(ComponentStrings.of(context).get('MONTH', 'Month')),
-                    ),
-                  ),
-                  ZdsPopupMenuItem(
-                    value: CalendarFormat.week,
-                    child: ListTile(
-                      visualDensity: VisualDensity.compact,
-                      title: Text(ComponentStrings.of(context).get('WEEK', 'Week')),
-                    ),
-                  ),
-                ],
-                builder: (_, open) => InkWell(
-                  onTap: open,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 8, left: 8, right: 4),
-                    child: Row(
+        child: widget.showSelectedDateHeader ? Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          _calendarFormat == CalendarFormat.week
-                              ? ComponentStrings.of(context).get('WEEK', 'Week')
-                              : ComponentStrings.of(context).get('MONTH', 'Month'),
-                          style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context).colorScheme.secondary,
-                              ),
-                        ),
-                        Icon(
-                          Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
+            _getSelectedDateHeaderRow(languageCode),
+            _getHeaderRow(languageCode)
                       ],
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+        ):_getHeaderRow(languageCode),
       ),
     );
 
@@ -742,6 +656,142 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
     );
   }
 
+  Widget _getSelectedDateHeaderRow(String languageCode){
+    return Padding(
+      padding: widget.headerPadding,
+      child:Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text("Selected Date", //TODO -- need to replace with ComponentStrings.of(context)
+            style: TextStyle(
+              color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),),
+          Text(
+            _selectedDay != null ? DateFormat.MMMEd(languageCode).format(_selectedDay!):'',
+            style: TextStyle(
+              color:  widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),);
+  }
+  Widget _getHeaderRow(String languageCode){
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          color: widget.calendarHeaderIconColor ?? Theme.of(context).colorScheme.onSurface,
+          splashRadius: 24,
+          tooltip: MaterialLocalizations.of(context).previousMonthTooltip,
+          onPressed: () => setState(
+                () => _focusedDay = _focusedDay.startOfMonth.subtract(
+              const Duration(days: 1),
+            ),
+          ),
+        ),
+        ZdsPopupMenu(
+          items: [
+            for (int i = 1; i <= 12; i++)
+              ZdsPopupMenuItem(
+                value: i,
+                child: ListTile(
+                  visualDensity: VisualDensity.compact,
+                  // Shows the month's name
+                  title: Text(DateFormat.MMMM(languageCode).format(DateTime(2000, i))),
+                ),
+              ),
+          ],
+          onSelected: (int monthNumber) => setState(() => _focusedDay = DateTime(_focusedDay.year, monthNumber)),
+          builder: (_, open) => InkWell(
+            onTap: open,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: 110,
+                minHeight: 48,
+              ),
+              child: Align(
+                child: Semantics(
+                  button: true,
+                  child: Text(
+                    _focusedDay.format('MMMM yyyy', languageCode),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          color: widget.calendarHeaderIconColor ?? Theme.of(context).colorScheme.onSurface,
+          splashRadius: 24,
+          tooltip: MaterialLocalizations.of(context).nextMonthTooltip,
+          onPressed: () => setState(() => _focusedDay = _focusedDay.endOfMonth.add(const Duration(days: 1))),
+        ),
+        const Spacer(),
+        if (widget._variant == _ZdsCalendarVariant.switchable)
+          ZdsPopupMenu(
+            onSelected: (CalendarFormat format) {
+              if (_calendarFormat != format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+                widget.onFormatChanged?.call(format);
+              }
+            },
+            items: [
+              ZdsPopupMenuItem(
+                value: CalendarFormat.month,
+                child: ListTile(
+                  visualDensity: VisualDensity.compact,
+                  title: Text(ComponentStrings.of(context).get('MONTH', 'Month')),
+                ),
+              ),
+              ZdsPopupMenuItem(
+                value: CalendarFormat.week,
+                child: ListTile(
+                  visualDensity: VisualDensity.compact,
+                  title: Text(ComponentStrings.of(context).get('WEEK', 'Week')),
+                ),
+              ),
+            ],
+            builder: (_, open) => InkWell(
+              onTap: open,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8, left: 8, right: 4),
+                child: Row(
+                  children: [
+                    Text(
+                      _calendarFormat == CalendarFormat.week
+                          ? ComponentStrings.of(context).get('WEEK', 'Week')
+                          : ComponentStrings.of(context).get('MONTH', 'Month'),
+                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
   String _getCurrentLocaleString(BuildContext context) {
     var currentLocale = const Locale('en', 'US');
     try {

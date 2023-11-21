@@ -213,6 +213,13 @@ class _AppWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<LocalizationsDelegate<dynamic>> defaultLocalizationDelegateList=[ GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      ComponentStrings.delegate, ];
+    List<LocalizationsDelegate<dynamic>> localizationList = localizationsDelegates != null ? {...localizationsDelegates!, ...defaultLocalizationDelegateList}.toList() :
+    defaultLocalizationDelegateList;
+    
     return MaterialApp(
       debugShowCheckedModeBanner: debugShowCheckedModeBanner,
       title: title,
@@ -227,13 +234,7 @@ class _AppWrapper extends StatelessWidget {
           child: child ?? const SizedBox(),
         );
       },
-      localizationsDelegates: localizationsDelegates ??
-          [
-            GlobalMaterialLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            ComponentStrings.delegate,
-          ],
+      localizationsDelegates:  localizationList,
       home: home,
       routes: routes,
       theme: buildTheme(theme, colorScheme),

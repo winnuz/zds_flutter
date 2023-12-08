@@ -260,7 +260,7 @@ Future<T?> showZdsBottomSheet<T>({
           bounce: true,
           enableDrag: enableDrag,
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
+          shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(30),
               topRight: Radius.circular(30),
@@ -302,7 +302,7 @@ Future<T?> showZdsBottomSheet<T>({
 
             return Dialog(
               backgroundColor: backgroundColor,
-              shape: RoundedRectangleBorder(
+              shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),

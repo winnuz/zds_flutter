@@ -260,8 +260,11 @@ Future<T?> showZdsBottomSheet<T>({
           bounce: true,
           enableDrag: enableDrag,
           clipBehavior: Clip.antiAlias,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
           ),
           builder: (context) {
             final header = headerBuilder?.call(context);
@@ -299,8 +302,11 @@ Future<T?> showZdsBottomSheet<T>({
 
             return Dialog(
               backgroundColor: backgroundColor,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(15)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
@@ -344,7 +350,7 @@ class _BottomSheetHeader extends StatelessWidget implements PreferredSizeWidget 
             alignment: Alignment.center,
             color: backgroundColor ?? Theme.of(context).colorScheme.surface,
             child: Container(
-              width: 120,
+              width: 44,
               height: 4,
               decoration: BoxDecoration(
                 color: ZdsColors.lightGrey,

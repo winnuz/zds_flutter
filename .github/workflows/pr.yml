@@ -46,7 +46,7 @@ jobs:
           ref: ${{ github.head_ref }}
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.13.x"
+          flutter-version: "3.16.x"
           channel: "stable"
       - name: Setup flutter
         run: flutter pub get

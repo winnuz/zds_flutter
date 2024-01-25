@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../zds_flutter.dart';
+import '../../../../zds_flutter.dart';
 import '../../utils/tools/measure.dart';
 
-const _emptyChildLength = 30;
+const int _emptyChildLength = 30;
 
 final List<Widget> _emptyChildren =
-    List.generate(_emptyChildLength, (_) => _emptyChild).divide(const Divider()).toList();
+    List<Widget>.generate(_emptyChildLength, (_) => _emptyChild).divide(const Divider()).toList();
 
 const Widget _emptyChild = SizedBox(height: 60, width: double.infinity);
 
@@ -19,13 +19,6 @@ Widget _emptyBuilder(_, __) => _emptyChild;
 ///
 ///  * [ListView].
 class ZdsList extends ListView {
-  /// {@template ZdsList.showEmpty}
-  /// Whether to show an empty list with a divider if the `children` list is empty.
-  ///
-  /// Defaults to false.
-  /// {@endtemplate}
-  final bool showEmpty;
-
   /// Creates a [ZdsList].
   ZdsList({
     super.key,
@@ -55,6 +48,8 @@ class ZdsList extends ListView {
           physics: showEmpty && children.isEmpty ? const NeverScrollableScrollPhysics() : physics,
           children: showEmpty && children.isEmpty ? _emptyChildren : children,
         );
+
+  // TODO(thelukewalton): Add prop for seperated list with divider
 
   /// Creates a ZdsList with an itemBuilder.
   ///
@@ -105,6 +100,13 @@ class ZdsList extends ListView {
             return const SizedBox.shrink();
           },
         );
+
+  /// {@template ZdsList.showEmpty}
+  /// Whether to show an empty list with a divider if the `children` list is empty.
+  ///
+  /// Defaults to false.
+  /// {@endtemplate}
+  final bool showEmpty;
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -133,39 +135,45 @@ class ZdsHorizontalList extends _ZdsHorizontalList {
 }
 
 class _ZdsHorizontalList extends StatelessWidget {
-  final Widget? caption;
-  final _ZdsHorizontalChildDelegate? delegate;
-  final bool isReducedHeight;
-
-  const _ZdsHorizontalList({super.key, this.delegate, this.caption, this.isReducedHeight = false});
+  const _ZdsHorizontalList({
+    super.key,
+    _ZdsHorizontalChildDelegate? delegate,
+    Widget? caption,
+    bool isReducedHeight = false,
+  })  : _isReducedHeight = isReducedHeight,
+        _delegate = delegate,
+        _caption = caption;
+  final Widget? _caption;
+  final _ZdsHorizontalChildDelegate? _delegate;
+  final bool _isReducedHeight;
 
   @override
   Widget build(BuildContext context) {
-    final firstItem = delegate!.build(context, 0);
+    final Widget firstItem = _delegate!.build(context, 0);
 
     return MeasureSize(
       child: firstItem,
-      builder: (context, size) {
+      builder: (BuildContext context, Size size) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <Widget>[
             DefaultTextStyle(
               style: Theme.of(context).textTheme.displayMedium!,
-              child: caption != null ? caption!.paddingOnly(top: 20, left: 20, right: 20) : const SizedBox(),
+              child: _caption != null ? _caption!.paddingOnly(top: 20, left: 20, right: 20) : const SizedBox(),
             ),
             SizedBox(
               width: double.infinity,
-              height: isReducedHeight ? size.height : size.height + 20,
+              height: _isReducedHeight ? size.height : size.height + 20,
               child: CustomScrollView(
                 shrinkWrap: true,
                 scrollDirection: Axis.horizontal,
-                slivers: [
+                slivers: <Widget>[
                   SliverPadding(
                     padding: const EdgeInsets.all(10),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        delegate!.build,
-                        childCount: delegate!.estimatedChildCount,
+                        _delegate!.build,
+                        childCount: _delegate!.estimatedChildCount,
                       ),
                     ),
                   ),
@@ -182,15 +190,14 @@ class _ZdsHorizontalList extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<_ZdsHorizontalChildDelegate?>('delegate', delegate))
-      ..add(DiagnosticsProperty<bool>('isReducedHeight', isReducedHeight));
+      ..add(DiagnosticsProperty<_ZdsHorizontalChildDelegate?>('delegate', _delegate))
+      ..add(DiagnosticsProperty<bool>('isReducedHeight', _isReducedHeight));
   }
 }
 
 class _ZdsHorizontalListChildrenDelegate extends _ZdsHorizontalChildDelegate {
-  final List<Widget>? children;
-
   _ZdsHorizontalListChildrenDelegate(this.children) : super();
+  final List<Widget>? children;
 
   @override
   int get estimatedChildCount => children!.length;
@@ -202,10 +209,9 @@ class _ZdsHorizontalListChildrenDelegate extends _ZdsHorizontalChildDelegate {
 }
 
 class _ZdsHorizontalListBuilderDelegate extends _ZdsHorizontalChildDelegate {
+  _ZdsHorizontalListBuilderDelegate(this.builder, this.itemCount) : super();
   final int? itemCount;
   final BuilderCallback? builder;
-
-  _ZdsHorizontalListBuilderDelegate(this.builder, this.itemCount) : super();
 
   @override
   int? get estimatedChildCount => itemCount;

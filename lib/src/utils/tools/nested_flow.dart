@@ -37,8 +37,10 @@ class ZdsNestedFlow extends StatefulWidget {
 
   /// Return the [ZdsNestedFlowState] of the current [ZdsNestedFlow]
   static ZdsNestedFlowState of(BuildContext context) {
-    final stateOfType = context.findAncestorStateOfType<ZdsNestedFlowState>();
-    if (stateOfType == null) throw FlutterError('Ancestor state of type ZdsNestedFlowState not found');
+    final ZdsNestedFlowState? stateOfType = context.findAncestorStateOfType<ZdsNestedFlowState>();
+    if (stateOfType == null) {
+      throw FlutterError('Ancestor state of type ZdsNestedFlowState not found');
+    }
     return stateOfType;
   }
 
@@ -48,13 +50,18 @@ class ZdsNestedFlow extends StatefulWidget {
     properties
       ..add(DiagnosticsProperty<Page<dynamic>>('rootPage', rootPage))
       ..add(DiagnosticsProperty<bool>('shouldClose', shouldClose))
-      ..add(ObjectFlagProperty<RouteFactory?>.has('onGenerateRoute', onGenerateRoute));
+      ..add(
+        ObjectFlagProperty<RouteFactory?>.has(
+          'onGenerateRoute',
+          onGenerateRoute,
+        ),
+      );
   }
 }
 
 /// State for [ZdsNestedFlowState].
 class ZdsNestedFlowState extends State<ZdsNestedFlow> {
-  late final _navigator = GlobalKey<NavigatorState>();
+  late final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
 
   /// Dismisses the nested navigation flow
   void pop<T extends Object?>([T? result]) {
@@ -63,19 +70,21 @@ class ZdsNestedFlowState extends State<ZdsNestedFlow> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (_) async {
         if (_navigator.currentState?.canPop() ?? false) {
           await _navigator.currentState?.maybePop();
-          return false;
         }
-        return widget.shouldClose;
+        if (widget.shouldClose && context.mounted) {
+          Navigator.of(context).pop();
+        }
       },
       child: Navigator(
         key: _navigator,
-        pages: [widget.rootPage],
+        pages: <Page<dynamic>>[widget.rootPage],
         onGenerateRoute: widget.onGenerateRoute,
-        onPopPage: (route, result) {
+        onPopPage: (Route<dynamic> route, dynamic result) {
           if (!(_navigator.currentState?.canPop() ?? false)) {
             if (widget.shouldClose) Navigator.of(context).pop(result);
             return false;

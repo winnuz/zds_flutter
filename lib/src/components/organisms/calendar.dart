@@ -62,6 +62,7 @@ class ZdsCalendar extends StatefulWidget {
     this.holidayEvents = const [],
     this.allCustomLabel,
     this.calendarRowHeight,
+    this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
   })  : _variant = _ZdsCalendarVariant.switchable,
@@ -97,6 +98,7 @@ class ZdsCalendar extends StatefulWidget {
     this.holidayEvents = const [],
     this.allCustomLabel,
     this.calendarRowHeight,
+    this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
   }) : _variant = _ZdsCalendarVariant.monthly;
@@ -130,6 +132,7 @@ class ZdsCalendar extends StatefulWidget {
     this.holidayEvents = const [],
     this.allCustomLabel,
     this.calendarRowHeight,
+    this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
   })  : _variant = _ZdsCalendarVariant.weekly,
@@ -306,8 +309,8 @@ class ZdsCalendar extends StatefulWidget {
       ..add(ColorProperty('calendarTextColor', calendarTextColor))
       ..add(IterableProperty<DateTime>('holidayEvents', holidayEvents))
       ..add(StringProperty('allCustomLabel', allCustomLabel))
-      ..add(DoubleProperty('calendarRowHeight', calendarRowHeight));
-
+      ..add(DoubleProperty('calendarRowHeight', calendarRowHeight))
+      ..add(DiagnosticsProperty<bool>('showSelectedDateHeader', showSelectedDateHeader));
   }
 }
 
@@ -506,15 +509,10 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
       setState(() => _focusedDay = _focusedDay.endOfMonth.add(const Duration(days: 1)));
     }
 
-    final calendarHeader = Container(
+    final calendarHeader =Container(
       color: Theme.of(context).colorScheme.surface,
       padding: widget.headerPadding,
       child: Material(
-
-        child: widget.showSelectedDateHeader ? Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-
         child: Row(
           children: [
             Semantics(
@@ -557,8 +555,8 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
                       child: Text(
                         _focusedDay.format('MMMM yyyy', languageCode),
                         style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                              color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
-                            ),
+                          color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+                        ),
                       ),
                     ),
                   ),
@@ -611,13 +609,36 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 8, left: 8, right: 4),
                     child: Row(
-
                       children: [
-            _getSelectedDateHeaderRow(languageCode),
-            _getHeaderRow(languageCode)
+                        Text(
+                          _calendarFormat == CalendarFormat.week
+                              ? ComponentStrings.of(context).get('WEEK', 'Week')
+                              : ComponentStrings.of(context).get('MONTH', 'Month'),
+                          style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
                       ],
-        ):_getHeaderRow(languageCode),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+    final calendarHeaderWithDate = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _getSelectedDateHeaderRow(languageCode),
+        calendarHeader
+      ],
     );
 
     final List<int> weekNumbers = _focusedDay.getWeeksNumbersInMonth(startingDayOfWeek, _focusedDay);
@@ -697,7 +718,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.hasHeader) calendarHeader,
+          if (widget.hasHeader) widget.showSelectedDateHeader ? calendarHeaderWithDate :calendarHeader,
           if (widget.showAllButton && context.isSmallScreen()) Row(children: [Expanded(child: allButton)]),
           AbsorbPointer(
             absorbing: !widget.enabled,

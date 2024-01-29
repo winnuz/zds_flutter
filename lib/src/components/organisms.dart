@@ -18,7 +18,7 @@ export 'organisms/modal.dart';
 export 'organisms/navigation_menu.dart';
 export 'organisms/profile.dart';
 export 'organisms/properties_list.dart';
-export 'organisms/quill_editor/quill.dart';
+//export 'organisms/quill_editor/quill.dart';
 export 'organisms/radio_list.dart';
 export 'organisms/search_app_bar.dart';
 export 'organisms/tab_scaffold.dart';

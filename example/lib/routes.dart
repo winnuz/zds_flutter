@@ -39,7 +39,7 @@ import 'pages/components/navigation_menu.dart';
 import 'pages/components/popover.dart';
 import 'pages/components/profile.dart';
 import 'pages/components/properties_list.dart';
-import 'pages/components/quill_editor_demo.dart';
+//import 'pages/components/quill_editor_demo.dart';
 import 'pages/components/radio_list.dart';
 import 'pages/components/search.dart';
 import 'pages/components/sheet_header.dart';
@@ -229,7 +229,7 @@ final kRoutes = {
     const DemoRoute(title: 'Sheet Headers', child: SheetHeaderDemo()),
     const DemoRoute(title: 'Vertical Navigation', child: VerticalNavDemo()),
     const DemoRoute(wrapper: false, title: 'Split Navigation', child: SplitNavigatorDemo()),
-    const DemoRoute(wrapper: false, title: 'Quill Editor', child: QuillEditorDemo()),
+    //const DemoRoute(wrapper: false, title: 'Quill Editor', child: QuillEditorDemo()),
     const DemoRoute(title: 'Html Preview', wrapper: false, child: HtmlPreview()),
   ],
   'Animations': [

@@ -62,6 +62,7 @@ class ZdsCalendar extends StatefulWidget {
     this.holidayEvents = const [],
     this.allCustomLabel,
     this.calendarRowHeight,
+    this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
   })  : _variant = _ZdsCalendarVariant.switchable,
@@ -97,6 +98,7 @@ class ZdsCalendar extends StatefulWidget {
     this.holidayEvents = const [],
     this.allCustomLabel,
     this.calendarRowHeight,
+    this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
   }) : _variant = _ZdsCalendarVariant.monthly;
@@ -130,6 +132,7 @@ class ZdsCalendar extends StatefulWidget {
     this.holidayEvents = const [],
     this.allCustomLabel,
     this.calendarRowHeight,
+    this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
   })  : _variant = _ZdsCalendarVariant.weekly,
@@ -165,6 +168,10 @@ class ZdsCalendar extends StatefulWidget {
   /// Whether the header should be shown or not. If using the [ZdsCalendar] constructor, the header will contain a
   /// format switcher. To not show a format switcher, use [ZdsCalendar.monthly] instead.
   final bool hasHeader;
+
+
+  /// Whether the selected date in the header should be shown or not.
+  final bool showSelectedDateHeader;
 
   /// List of icons to be shown at the beginning of selected weeks.
   ///
@@ -300,7 +307,8 @@ class ZdsCalendar extends StatefulWidget {
       ..add(ColorProperty('calendarTextColor', calendarTextColor))
       ..add(IterableProperty<DateTime>('holidayEvents', holidayEvents))
       ..add(StringProperty('allCustomLabel', allCustomLabel))
-      ..add(DoubleProperty('calendarRowHeight', calendarRowHeight));
+      ..add(DoubleProperty('calendarRowHeight', calendarRowHeight))
+	  ..add(DiagnosticsProperty<bool>('showSelectedDateHeader', showSelectedDateHeader));
   }
 }
 
@@ -666,7 +674,14 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
         ),
       ),
     );
-
+    final calendarHeaderWithDate = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _getSelectedDateHeaderRow(languageCode),
+        calendarHeader
+      ],
+    );
     final List<int> weekNumbers = _focusedDay.getWeeksNumbersInMonth(startingDayOfWeek, _focusedDay);
     final List<DateTime> weekStartDays = () {
       DateTime firstDayOfWeeks = _focusedDay.startOfMonth.getFirstDayOfWeek();
@@ -744,7 +759,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.hasHeader) calendarHeader,
+          if (widget.hasHeader) widget.showSelectedDateHeader ? calendarHeaderWithDate :calendarHeader,
           if (widget.showAllButton && context.isSmallScreen()) Row(children: [Expanded(child: allButton)]),
           AbsorbPointer(
             absorbing: !widget.enabled,
@@ -824,6 +839,31 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
     );
   }
 
+  Widget _getSelectedDateHeaderRow(String languageCode){
+    return Padding(
+      padding: widget.headerPadding,
+      child:Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text("Selected Date", //TODO -- need to replace with ComponentStrings.of(context)
+            style: TextStyle(
+              color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),),
+          Text(
+            _selectedDay != null ? DateFormat.MMMEd(languageCode).format(_selectedDay!):'',
+            style: TextStyle(
+              color:  widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),);
+  }
   String _getCurrentLocaleString(BuildContext context) {
     var currentLocale = const Locale('en', 'US');
     try {

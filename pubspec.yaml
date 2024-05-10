@@ -73,7 +73,11 @@ dependencies:
   video_compress: ^3.1.0
   video_player: ^2.7.2
   vsc_quill_delta_to_html: ^1.0.3
-  zeta_flutter: ^0.8.2
+  #zeta_flutter: ^0.8.2
+  zeta_flutter:
+    git:
+      url: https://github.com/winnuz/zeta_flutter.git
+      ref: zeta_updates
 
 dev_dependencies:
   flutter_test:

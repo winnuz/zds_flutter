@@ -77,7 +77,7 @@ dependencies:
   zeta_flutter:
     git:
       url: https://github.com/winnuz/zeta_flutter.git
-      ref: zeta_updates
+      ref: 0.8.2-01
 
 dev_dependencies:
   flutter_test:

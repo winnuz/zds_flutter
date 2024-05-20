@@ -236,7 +236,7 @@ class ZdsCalendar extends StatefulWidget {
 
   /// Color of the text on the calendar header
   ///
-  /// Defaults to [ColorScheme.onBackground].
+  /// Defaults to [ColorScheme.onSurface].
   final Color? calendarHeaderTextColor;
 
   /// Custom color override for unselected days.
@@ -450,10 +450,10 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
         cellMargin: EdgeInsets.all(widget.weekIcons != null && widget.weekIcons!.isNotEmpty ? 5 : 8),
         todayTextStyle: textTheme,
         defaultTextStyle: textTheme.copyWith(
-          color: widget.calendarTextColor ?? Theme.of(context).colorScheme.onBackground,
+          color: widget.calendarTextColor ?? Theme.of(context).colorScheme.onSurface,
         ),
         weekendTextStyle: textTheme.copyWith(
-          color: widget.calendarTextColor ?? Theme.of(context).colorScheme.onBackground,
+          color: widget.calendarTextColor ?? Theme.of(context).colorScheme.onSurface,
         ),
         holidayDecoration: BoxDecoration(
           color: zetaColors.warm.surface,
@@ -554,7 +554,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
                           child: Text(
                             _focusedDay.format('MMMM', languageCode),
                             style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                  color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+                                  color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onSurface,
                                 ),
                           ),
                         ),
@@ -603,7 +603,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
                           child: Text(
                             _focusedDay.format('yyyy', languageCode),
                             style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                  color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+                                  color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onSurface,
                                 ),
                           ),
                         ),

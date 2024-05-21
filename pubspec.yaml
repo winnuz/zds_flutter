@@ -50,17 +50,12 @@ dependencies:
   giphy_get: ^3.5.5
   html: ^0.15.4
   http_client_helper: ^3.0.0
-<<<<<<< HEAD
-  image_editor_plus: ^1.0.3
-  image_picker: ^1.0.2
-  intl: ^0.19.0
-  just_audio: ^0.9.36
-=======
+
   image_editor_plus: ^1.0.6
   image_picker: ^1.1.1
   intl: ^0.19.0
   just_audio: ^0.9.38
->>>>>>> main
+
   linked_scroll_controller: ^0.2.0
   mime: ^1.0.5
   modal_bottom_sheet: ^3.0.0

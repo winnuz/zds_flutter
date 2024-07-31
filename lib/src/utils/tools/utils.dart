@@ -51,6 +51,17 @@ extension DateTimeFormatter on DateTime {
     return DateFormat(template, locale).format(this);
   }
 
+  /// Gets the first day of the month, set to midnight.
+  DateTime firstDayOfMonth() {
+    return DateTime(year, month);
+  }
+
+  /// Gets the last day of the month, set to midnight.
+  DateTime lastDayOfMonth() {
+    final int lastDay = DateTime(year, month + 1, 0).day;
+    return DateTime(year, month, lastDay);
+  }
+
   /// Returns date at 00:00:00
   DateTime get toMidnight {
     return DateTime(year, month, day);

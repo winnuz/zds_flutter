@@ -65,6 +65,7 @@ class ZdsCalendar extends StatefulWidget {
     this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
+    this.selectedRange,
   })  : _variant = _ZdsCalendarVariant.switchable,
         hasHeader = true;
 
@@ -101,6 +102,7 @@ class ZdsCalendar extends StatefulWidget {
     this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
+    this.selectedRange,
   }) : _variant = _ZdsCalendarVariant.monthly;
 
   /// Shows a calendar in a fixed weekly format.
@@ -135,6 +137,7 @@ class ZdsCalendar extends StatefulWidget {
     this.showSelectedDateHeader = false,
     this.previousTooltip,
     this.nextTooltip,
+    this.selectedRange,
   })  : _variant = _ZdsCalendarVariant.weekly,
         hasHeader = false;
 
@@ -168,7 +171,6 @@ class ZdsCalendar extends StatefulWidget {
   /// Whether the header should be shown or not. If using the [ZdsCalendar] constructor, the header will contain a
   /// format switcher. To not show a format switcher, use [ZdsCalendar.monthly] instead.
   final bool hasHeader;
-
 
   /// Whether the selected date in the header should be shown or not.
   final bool showSelectedDateHeader;
@@ -257,6 +259,9 @@ class ZdsCalendar extends StatefulWidget {
   /// an override for calendar row height
   final double? calendarRowHeight;
 
+  /// Initial selected range
+  final DateTimeRange? selectedRange;
+
   @override
   State<ZdsCalendar> createState() => _ZdsCalendarState();
 
@@ -308,34 +313,77 @@ class ZdsCalendar extends StatefulWidget {
       ..add(IterableProperty<DateTime>('holidayEvents', holidayEvents))
       ..add(StringProperty('allCustomLabel', allCustomLabel))
       ..add(DoubleProperty('calendarRowHeight', calendarRowHeight))
-	  ..add(DiagnosticsProperty<bool>('showSelectedDateHeader', showSelectedDateHeader));
+      ..add(DiagnosticsProperty<bool>('showSelectedDateHeader', showSelectedDateHeader))
+      ..add(DiagnosticsProperty<DateTimeRange?>('selectedRange', selectedRange));
   }
 }
 
 class _ZdsCalendarState extends State<ZdsCalendar> {
-  late DateTime _focusedDay; // Used to be a ValueListenable?
   DateTime? _selectedDay;
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
-  DateTime? startOfweek;
-  DateTime? endOfweek;
+  DateTime? startOfWeek;
+  DateTime? endOfWeek;
+
+  late DateTime _firstDay;
+  late DateTime _lastDay;
+
   late CalendarFormat _calendarFormat;
+
+  late DateTime _focusedDay; // Used to be a ValueListenable?
+
+  DateTime _safePrevious(DateTime value) {
+    if (value.isBefore(_firstDay)) {
+      return _firstDay;
+    }
+    return value;
+  }
+
+  DateTime _safeNext(DateTime value) {
+    if (value.isAfter(_lastDay)) {
+      return _lastDay;
+    }
+    return value;
+  }
+
+  DateTime _safeSelection(DateTime value) {
+    if (value.isBefore(_firstDay)) {
+      return _firstDay;
+    } else if (value.isAfter(_lastDay)) {
+      return _lastDay;
+    } else {
+      return value;
+    }
+  }
 
   @override
   void initState() {
+    _firstDay = widget.firstDay ?? DateTime(1940);
+    _lastDay = widget.lastDay ?? DateTime(2100);
     _focusedDay = widget.initialSelectedWeek ?? DateTime.now();
     _selectedDay = _selectedDay ?? widget.selectedDay ?? widget.initialSelectedDay;
     _calendarFormat = (widget._variant == _ZdsCalendarVariant.weekly) ? CalendarFormat.week : CalendarFormat.month;
+
+    if (widget.selectedRange != null) {
+      _rangeStart = _safeSelection(widget.selectedRange!.start);
+      _rangeEnd = _safeSelection(widget.selectedRange!.end);
+    }
+
     super.initState();
   }
 
   @override
   void didUpdateWidget(covariant ZdsCalendar oldWidget) {
     if (widget.selectedDay != null && oldWidget.selectedDay != widget.selectedDay) {
-      setState(() {
-        _selectedDay = widget.selectedDay;
-      });
+      setState(() => _selectedDay = widget.selectedDay);
       widget.onDaySelected?.call(widget.selectedDay!, _focusedDay);
+    }
+
+    if (oldWidget.selectedRange != widget.selectedRange) {
+      setState(() {
+        _rangeStart = widget.selectedRange?.start;
+        _rangeEnd = widget.selectedRange?.end;
+      });
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -350,13 +398,13 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
 
     final StartingDayOfWeek startingDayOfWeek = widget.startingDayOfWeek ?? StartingDayOfWeek.sunday;
     final zetaColors = Zeta.of(context).colors;
+
     final calendar = TableCalendar(
       startingDayOfWeek: startingDayOfWeek,
       availableGestures: widget.availableGestures,
       rowHeight: widget.calendarRowHeight ?? calendarRowHeight,
-      // TODO(CALENDAR): Determine initial and final dates,
-      firstDay: widget.firstDay ?? DateTime(1940),
-      lastDay: widget.lastDay ?? DateTime(17776),
+      firstDay: _firstDay,
+      lastDay: _lastDay,
       focusedDay: _focusedDay,
       rangeStartDay: _rangeStart,
       rangeEndDay: _rangeEnd,
@@ -448,7 +496,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
                   : 8,
         ),
         cellMargin: EdgeInsets.all(widget.weekIcons != null && widget.weekIcons!.isNotEmpty ? 5 : 8),
-        todayTextStyle: textTheme,
+
         defaultTextStyle: textTheme.copyWith(
           color: widget.calendarTextColor ?? Theme.of(context).colorScheme.onBackground,
         ),
@@ -480,6 +528,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
           color: zetaColors.secondary,
           shape: BoxShape.circle,
         ),
+        todayTextStyle: textTheme,
         todayDecoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.fromBorderSide(
@@ -497,13 +546,16 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
         )
         .backgroundColor(Theme.of(context).colorScheme.surface);
 
-    void previousMonthTap() {
-      setState(() => _focusedDay = _focusedDay.startOfMonth.subtract(const Duration(days: 1)));
-    }
+    final VoidCallback? previousMonthTap = _focusedDay.firstDayOfMonth().isAfter(_firstDay)
+        ? () => setState(() => _focusedDay = _safePrevious(_focusedDay.startOfMonth.subtract(const Duration(days: 1))))
+        : null;
 
-    void nextMonthTap() {
-      setState(() => _focusedDay = _focusedDay.endOfMonth.add(const Duration(days: 1)));
-    }
+    final VoidCallback? nextMonthTap = _focusedDay.lastDayOfMonth().isBefore(_lastDay)
+        ? () => setState(() => _focusedDay = _safeNext(_focusedDay.endOfMonth.add(const Duration(days: 1))))
+        : null;
+
+    final months = getAvailableMonths(_firstDay, _lastDay);
+    final years = getAvailableYears(_firstDay, _lastDay);
 
     final calendarHeader = Container(
       color: Theme.of(context).colorScheme.surface,
@@ -528,18 +580,19 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
                 ),
                 ZdsPopupMenu(
                   items: [
-                    for (int i = 1; i <= 12; i++)
+                    for (int i = 0; i < months.length; i++)
                       ZdsPopupMenuItem(
                         value: i,
                         child: ListTile(
                           visualDensity: VisualDensity.compact,
                           // Shows the month's name
-                          title: Text(DateFormat.MMMM(languageCode).format(DateTime(2000, i))),
+                          title: Text(DateFormat.MMMM(languageCode).format(DateTime(1, months[i]))),
                         ),
                       ),
                   ],
-                  onSelected: (int monthNumber) =>
-                      setState(() => _focusedDay = DateTime(_focusedDay.year, monthNumber)),
+                  onSelected: (int i) {
+                    setState(() => _focusedDay = _safeSelection(DateTime(_focusedDay.year, months[i])));
+                  },
                   builder: (_, open) => InkWell(
                     onTap: open,
                     borderRadius: BorderRadius.circular(8),
@@ -578,17 +631,19 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
                 const Spacer(),
                 ZdsPopupMenu(
                   items: [
-                    for (int i = _rangeStart?.year ?? 1940; i <= (_rangeEnd?.year ?? 2050); i++)
+                    for (int i = 0; i < years.length; i++)
                       ZdsPopupMenuItem(
                         value: i,
                         child: ListTile(
                           visualDensity: VisualDensity.compact,
                           // Shows the month's name
-                          title: Text(i.toString()),
+                          title: Text(DateFormat.y(languageCode).format(DateTime(years[i]))),
                         ),
                       ),
                   ],
-                  onSelected: (int year) => setState(() => _focusedDay = DateTime(year, _focusedDay.month)),
+                  onSelected: (int i) => setState(
+                    () => _focusedDay = _safeSelection(DateTime(years[i], _focusedDay.month)),
+                  ),
                   builder: (_, open) => InkWell(
                     onTap: open,
                     borderRadius: BorderRadius.circular(8),
@@ -677,10 +732,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
     final calendarHeaderWithDate = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
-      children: [
-        _getSelectedDateHeaderRow(languageCode),
-        calendarHeader
-      ],
+      children: [_getSelectedDateHeaderRow(languageCode), calendarHeader],
     );
     final List<int> weekNumbers = _focusedDay.getWeeksNumbersInMonth(startingDayOfWeek, _focusedDay);
     final List<DateTime> weekStartDays = () {
@@ -711,15 +763,15 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
           setState(
             () {
               _selectedDay = null;
-              startOfweek = getDate(
+              startOfWeek = getDate(
                 _focusedDay.subtract(Duration(days: _focusedDay.weekday)),
               );
-              endOfweek = getDate(
+              endOfWeek = getDate(
                 _focusedDay.add(Duration(days: DateTime.daysPerWeek - _focusedDay.weekday - 1)),
               );
             },
           );
-          widget.onAllSelected?.call(startOfweek, endOfweek, _focusedDay);
+          widget.onAllSelected?.call(startOfWeek, endOfWeek, _focusedDay);
         },
         child: Container(
           alignment: Alignment.center,
@@ -759,7 +811,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.hasHeader) widget.showSelectedDateHeader ? calendarHeaderWithDate :calendarHeader,
+          if (widget.hasHeader) widget.showSelectedDateHeader ? calendarHeaderWithDate : calendarHeader,
           if (widget.showAllButton && context.isSmallScreen()) Row(children: [Expanded(child: allButton)]),
           AbsorbPointer(
             absorbing: !widget.enabled,
@@ -839,31 +891,49 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
     );
   }
 
-  Widget _getSelectedDateHeaderRow(String languageCode){
+  List<int> getAvailableMonths(DateTime startDate, DateTime endDate) {
+    // If the range spans multiple years, return all months
+    if (startDate.year < endDate.year) {
+      return List<int>.generate(12, (index) => index + 1);
+    }
+
+    // If the range is within the same year, return the months from startDate to endDate
+    return List<int>.generate(endDate.month - startDate.month + 1, (index) => startDate.month + index);
+  }
+
+  List<int> getAvailableYears(DateTime startDate, DateTime endDate) {
+    // Generate a list of years from startDate.year to endDate.year
+    return List<int>.generate(endDate.year - startDate.year + 1, (index) => startDate.year + index);
+  }
+
+  Widget _getSelectedDateHeaderRow(String languageCode) {
     return Padding(
       padding: widget.headerPadding,
-      child:Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("Selected Date", //TODO -- need to replace with ComponentStrings.of(context)
+          Text(
+            'Selected Date', //TODO -- need to replace with ComponentStrings.of(context)
             style: TextStyle(
               color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-            ),),
+            ),
+          ),
           Text(
-            _selectedDay != null ? DateFormat.MMMEd(languageCode).format(_selectedDay!):'',
+            _selectedDay != null ? DateFormat.MMMEd(languageCode).format(_selectedDay!) : '',
             style: TextStyle(
-              color:  widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
+              color: widget.calendarHeaderTextColor ?? Theme.of(context).colorScheme.onBackground,
               fontSize: 24,
               fontWeight: FontWeight.w500,
             ),
           ),
         ],
-      ),);
+      ),
+    );
   }
+
   String _getCurrentLocaleString(BuildContext context) {
     var currentLocale = const Locale('en', 'US');
     try {
@@ -891,8 +961,8 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<DateTime?>('startOfweek', startOfweek))
-      ..add(DiagnosticsProperty<DateTime?>('endOfweek', endOfweek));
+      ..add(DiagnosticsProperty<DateTime?>('startOfweek', startOfWeek))
+      ..add(DiagnosticsProperty<DateTime?>('endOfweek', endOfWeek));
   }
 }
 

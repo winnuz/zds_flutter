@@ -360,7 +360,7 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
   void initState() {
     _firstDay = widget.firstDay ?? DateTime(1940);
     _lastDay = widget.lastDay ?? DateTime(2100);
-    _focusedDay = widget.initialSelectedWeek ?? DateTime.now();
+
     _selectedDay = _selectedDay ?? widget.selectedDay ?? widget.initialSelectedDay;
     _calendarFormat = (widget._variant == _ZdsCalendarVariant.weekly) ? CalendarFormat.week : CalendarFormat.month;
 
@@ -368,6 +368,8 @@ class _ZdsCalendarState extends State<ZdsCalendar> {
       _rangeStart = _safeSelection(widget.selectedRange!.start);
       _rangeEnd = _safeSelection(widget.selectedRange!.end);
     }
+
+    _focusedDay = widget.initialSelectedWeek ?? _rangeStart ?? _safeSelection(DateTime.now());
 
     super.initState();
   }

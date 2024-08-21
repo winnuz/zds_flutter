@@ -23,6 +23,12 @@ dependencies:
   url_launcher: ^6.2.5
   cross_file: ^0.3.3+8
 
+dependency_overrides:
+  video_compress:
+    git:
+      url: https://github.com/ps9310/VideoCompress.git
+      ref: 3.1.2
+
 flutter:
   uses-material-design: true
   assets:
